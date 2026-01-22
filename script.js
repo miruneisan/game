@@ -3,7 +3,8 @@ const GAME_CONFIG = {
     HOLES: 10,
     GAME_DURATION: 30, // 秒
     MAX_LEVEL: 7,
-    CAT_PARTS: ['😺', '😸', '😻', '🐱', '😽', '😹','🙀','😿','🐾', '🦴','🐶'], // 猫の顔、手足など
+    CAT_PARTS: ['😺', '😸', '😻', '🐱', '😽', '😹', '🙀','🐾'], // 猫のみ（なでてOK）
+    TRAP_PARTS: ['🦴', '🐶'], // 罠（クリックしたらゲームオーバー）
 };
 
 // レベルごとの設定（猫が出ている時間をミリ秒で設定）
@@ -117,9 +118,21 @@ function spawnCat() {
     const holeIndex = availableHoles[Math.floor(Math.random() * availableHoles.length)];
     const catElement = document.querySelector(`.cat[data-index="${holeIndex}"]`);
     
-    // ランダムな猫パーツを選択
-    const catPart = GAME_CONFIG.CAT_PARTS[Math.floor(Math.random() * GAME_CONFIG.CAT_PARTS.length)];
-    catElement.textContent = catPart;
+    // 猫か罠かをランダムに決定（70%の確率で猫、30%の確率で罠）
+    const isCat = Math.random() < 0.7;
+    let selectedPart;
+    
+    if (isCat) {
+        // ランダムな猫パーツを選択
+        selectedPart = GAME_CONFIG.CAT_PARTS[Math.floor(Math.random() * GAME_CONFIG.CAT_PARTS.length)];
+        catElement.dataset.isCat = 'true';
+    } else {
+        // ランダムな罠パーツを選択
+        selectedPart = GAME_CONFIG.TRAP_PARTS[Math.floor(Math.random() * GAME_CONFIG.TRAP_PARTS.length)];
+        catElement.dataset.isCat = 'false';
+    }
+    
+    catElement.textContent = selectedPart;
     
     // 猫を表示
     catElement.classList.add('show');
@@ -130,9 +143,14 @@ function spawnCat() {
         if (!gameState.isPlaying) return;
         
         if (catElement.classList.contains('show') && gameState.activeCats.has(holeIndex)) {
-            // なでられなかった場合はゲームオーバー
-            hideCat(holeIndex);
-            gameOver(false);
+            // 猫の場合のみ、なでられなかったらゲームオーバー
+            if (isCat) {
+                hideCat(holeIndex);
+                gameOver(false);
+            } else {
+                // 罠の場合は自然に消える（ゲームオーバーにならない）
+                hideCat(holeIndex);
+            }
         }
     }, config.showTime);
     
@@ -152,18 +170,31 @@ function petCat(index) {
     const catElement = document.querySelector(`.cat[data-index="${index}"]`);
     
     if (catElement.classList.contains('show') && gameState.activeCats.has(index)) {
-        // スコア加算
-        gameState.score += 10 * gameState.level;
-        scoreDisplay.textContent = gameState.score;
+        // 猫かどうかをチェック
+        const isCat = catElement.dataset.isCat === 'true';
         
-        // アニメーション
-        catElement.classList.add('petted');
-        setTimeout(() => {
-            catElement.classList.remove('petted');
-        }, 300);
-        
-        // 猫を隠す
-        hideCat(index);
+        if (isCat) {
+            // 猫の場合：スコア加算
+            gameState.score += 10 * gameState.level;
+            scoreDisplay.textContent = gameState.score;
+            
+            // アニメーション
+            catElement.classList.add('petted');
+            setTimeout(() => {
+                catElement.classList.remove('petted');
+            }, 300);
+            
+            // 猫を隠す
+            hideCat(index);
+        } else {
+            // 罠の場合：ゲームオーバー
+            catElement.classList.add('petted');
+            setTimeout(() => {
+                catElement.classList.remove('petted');
+                hideCat(index);
+                gameOver(false, true); // 罠を踏んだことを示すフラグ
+            }, 300);
+        }
     }
 }
 
@@ -203,12 +234,16 @@ function levelComplete() {
 }
 
 // ゲームオーバー
-function gameOver(success) {
+function gameOver(success, isTrap = false) {
     stopGame();
     
     if (!success) {
         modalTitle.textContent = '😿 ゲームオーバー 😿';
-        modalMessage.textContent = '猫ちゃんが怒って逃げてしまいました...';
+        if (isTrap) {
+            modalMessage.textContent = '罠をクリックしてしまいました...';
+        } else {
+            modalMessage.textContent = '猫ちゃんが怒って逃げてしまいました...';
+        }
         finalScore.textContent = gameState.score;
         restartBtn.textContent = 'もう一度';
         gameOverModal.classList.remove('hidden');
