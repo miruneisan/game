@@ -240,7 +240,7 @@ function gameOver(success, isTrap = false) {
     if (!success) {
         modalTitle.textContent = '😿 ゲームオーバー 😿';
         if (isTrap) {
-            modalMessage.textContent = '罠をクリックしてしまいました...';
+            modalMessage.textContent = '猫ちゃんが逃げてしまいました...';
         } else {
             modalMessage.textContent = '猫ちゃんが怒って逃げてしまいました...';
         }
@@ -300,8 +300,11 @@ function restartGame() {
         scoreDisplay.textContent = gameState.score;
     }
     
-    // ゲームを自動的に開始
-    startGame();
+    // ゲームオーバー後は開始ボタンを表示
+    gameState.timeLeft = GAME_CONFIG.GAME_DURATION;
+    updateDisplay();
+    startBtn.style.display = 'inline-block';
+    cancelBtn.style.display = 'none';
 }
 
 // 表示更新
