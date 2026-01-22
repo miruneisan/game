@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>猫なでゲーム</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>🐱 猫なでゲーム 🐱</h1>
+            <div class="game-info">
+                <div class="info-item">
+                    <span class="label">レベル:</span>
+                    <span id="level">1</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">スコア:</span>
+                    <span id="score">0</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">残り時間:</span>
+                    <span id="timer">30</span>秒
+                </div>
+            </div>
+        </div>
+
+        <div class="game-board" id="gameBoard">
+            <!-- 10個の穴 -->
+        </div>
+
+        <div class="controls">
+            <button id="startBtn" class="btn-start">ゲーム開始</button>
+            <button id="cancelBtn" class="btn-cancel" style="display: none;">キャンセル</button>
+        </div>
+
+        <div id="gameOverModal" class="modal hidden">
+            <div class="modal-content">
+                <h2 id="modalTitle">ゲームオーバー</h2>
+                <p id="modalMessage"></p>
+                <p>最終スコア: <span id="finalScore">0</span></p>
+                <button id="restartBtn" class="btn-restart">もう一度</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
