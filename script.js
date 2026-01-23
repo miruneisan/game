@@ -9,13 +9,13 @@ const GAME_CONFIG = {
 
 // レベルごとの設定（猫が出ている時間をミリ秒で設定）
 const LEVEL_CONFIG = {
-    1: { showTime: 2000, spawnInterval: 1600 },
-    2: { showTime: 1800, spawnInterval: 1400 },
-    3: { showTime: 1600, spawnInterval: 1200 },
-    4: { showTime: 1400, spawnInterval: 1000 },
-    5: { showTime: 1200, spawnInterval: 900 },
-    6: { showTime: 1100, spawnInterval: 800 },
-    7: { showTime: 1000, spawnInterval: 700 },
+    1: { showTime: 1800, spawnInterval: 1400 },
+    2: { showTime: 1600, spawnInterval: 1200 },
+    3: { showTime: 1400, spawnInterval: 1000 },
+    4: { showTime: 1200, spawnInterval: 900 },
+    5: { showTime: 1100, spawnInterval: 800 },
+    6: { showTime: 1000, spawnInterval: 750 },
+    7: { showTime: 950, spawnInterval: 700 },
 };
 
 // ゲーム状態
