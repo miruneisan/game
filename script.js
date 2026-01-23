@@ -41,6 +41,8 @@ const modalTitle = document.getElementById('modalTitle');
 const modalMessage = document.getElementById('modalMessage');
 const finalScore = document.getElementById('finalScore');
 const restartBtn = document.getElementById('restartBtn');
+const confettiCanvas = document.getElementById('confettiCanvas');
+const confettiCtx = confettiCanvas.getContext('2d');
 
 // 初期化
 function init() {
@@ -48,6 +50,16 @@ function init() {
     startBtn.addEventListener('click', startGame);
     cancelBtn.addEventListener('click', cancelGame);
     restartBtn.addEventListener('click', restartGame);
+    
+    // キャンバスサイズを設定
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+}
+
+// キャンバスサイズ調整
+function resizeCanvas() {
+    confettiCanvas.width = window.innerWidth;
+    confettiCanvas.height = window.innerHeight;
 }
 
 // 穴を作成
@@ -224,7 +236,9 @@ function levelComplete() {
         restartBtn.textContent = '次のレベル';
         gameOverModal.classList.remove('hidden');
     } else {
-        // 全レベルクリア
+        // 全レベルクリア - 紙吹雪を表示
+        startConfetti();
+        
         modalTitle.textContent = '🏆 全レベルクリア！ 🏆';
         modalMessage.textContent = 'おめでとうございます！すべてのレベルをクリアしました！';
         finalScore.textContent = gameState.score;
@@ -291,6 +305,7 @@ function cancelGame() {
 // ゲーム再開
 function restartGame() {
     gameOverModal.classList.add('hidden');
+    stopConfetti(); // 紙吹雪を停止
     
     // レベル7クリア後は最初から
     if (gameState.level > GAME_CONFIG.MAX_LEVEL) {
@@ -312,6 +327,95 @@ function updateDisplay() {
     levelDisplay.textContent = gameState.level;
     scoreDisplay.textContent = gameState.score;
     timerDisplay.textContent = gameState.timeLeft;
+}
+
+// 紙吹雪エフェクト
+let confettiParticles = [];
+let confettiAnimationId = null;
+
+class ConfettiParticle {
+    constructor() {
+        this.x = Math.random() * confettiCanvas.width;
+        this.y = -10;
+        this.size = Math.random() * 8 + 5;
+        this.speedY = Math.random() * 3 + 2;
+        this.speedX = Math.random() * 2 - 1;
+        this.color = this.getRandomColor();
+        this.rotation = Math.random() * 360;
+        this.rotationSpeed = Math.random() * 10 - 5;
+    }
+    
+    getRandomColor() {
+        const colors = [
+            '#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', 
+            '#6c5ce7', '#a29bfe', '#fd79a8', '#fdcb6e',
+            '#e17055', '#74b9ff', '#55efc4', '#ffeaa7'
+        ];
+        return colors[Math.floor(Math.random() * colors.length)];
+    }
+    
+    update() {
+        this.y += this.speedY;
+        this.x += this.speedX;
+        this.rotation += this.rotationSpeed;
+        
+        if (this.y > confettiCanvas.height) {
+            return false;
+        }
+        return true;
+    }
+    
+    draw() {
+        confettiCtx.save();
+        confettiCtx.translate(this.x, this.y);
+        confettiCtx.rotate(this.rotation * Math.PI / 180);
+        confettiCtx.fillStyle = this.color;
+        confettiCtx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+        confettiCtx.restore();
+    }
+}
+
+function startConfetti() {
+    // 既存の紙吹雪をクリア
+    stopConfetti();
+    
+    // 初期の紙吹雪を生成
+    for (let i = 0; i < 150; i++) {
+        confettiParticles.push(new ConfettiParticle());
+    }
+    
+    animateConfetti();
+}
+
+function animateConfetti() {
+    confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+    
+    // パーティクルを更新・描画
+    confettiParticles = confettiParticles.filter(particle => {
+        particle.draw();
+        return particle.update();
+    });
+    
+    // 新しいパーティクルを追加（最初の3秒間）
+    if (confettiParticles.length < 150 && Math.random() < 0.3) {
+        confettiParticles.push(new ConfettiParticle());
+    }
+    
+    // パーティクルが残っている間はアニメーション継続
+    if (confettiParticles.length > 0) {
+        confettiAnimationId = requestAnimationFrame(animateConfetti);
+    } else {
+        confettiAnimationId = null;
+    }
+}
+
+function stopConfetti() {
+    if (confettiAnimationId) {
+        cancelAnimationFrame(confettiAnimationId);
+        confettiAnimationId = null;
+    }
+    confettiParticles = [];
+    confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
 }
 
 // 初期化実行
