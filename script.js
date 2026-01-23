@@ -27,6 +27,8 @@ let gameState = {
     activeCats: new Map(), // index -> timeoutId を保存
     spawnTimer: null,
     gameTimer: null,
+    lastClearedLevel: 0, // 最後にクリアしたレベル
+    lastClearedScore: 0, // 最後にクリアした時のスコア
 };
 
 // DOM要素
@@ -40,9 +42,18 @@ const gameOverModal = document.getElementById('gameOverModal');
 const modalTitle = document.getElementById('modalTitle');
 const modalMessage = document.getElementById('modalMessage');
 const finalScore = document.getElementById('finalScore');
+const reachedLevel = document.getElementById('reachedLevel');
 const restartBtn = document.getElementById('restartBtn');
 const confettiCanvas = document.getElementById('confettiCanvas');
 const confettiCtx = confettiCanvas.getContext('2d');
+const nameInputSection = document.getElementById('nameInputSection');
+const playerNameInput = document.getElementById('playerName');
+const saveScoreBtn = document.getElementById('saveScoreBtn');
+const skipSaveBtn = document.getElementById('skipSaveBtn');
+const rankingBtn = document.getElementById('rankingBtn');
+const rankingModal = document.getElementById('rankingModal');
+const rankingList = document.getElementById('rankingList');
+const closeRankingBtn = document.getElementById('closeRankingBtn');
 
 // 初期化
 function init() {
@@ -50,6 +61,10 @@ function init() {
     startBtn.addEventListener('click', startGame);
     cancelBtn.addEventListener('click', cancelGame);
     restartBtn.addEventListener('click', restartGame);
+    saveScoreBtn.addEventListener('click', saveScore);
+    skipSaveBtn.addEventListener('click', skipSave);
+    rankingBtn.addEventListener('click', showRanking);
+    closeRankingBtn.addEventListener('click', closeRanking);
     
     // キャンバスサイズを設定
     resizeCanvas();
@@ -226,14 +241,21 @@ function hideCat(index) {
 function levelComplete() {
     stopGame();
     
+    // クリア時のレベルとスコアを記録
+    gameState.lastClearedLevel = gameState.level;
+    gameState.lastClearedScore = gameState.score;
+    
     if (gameState.level < GAME_CONFIG.MAX_LEVEL) {
         gameState.level++;
         levelDisplay.textContent = gameState.level;
         
         modalTitle.textContent = '🎉 レベルクリア！ 🎉';
         modalMessage.textContent = `レベル${gameState.level}に進みます！`;
-        finalScore.textContent = gameState.score;
+        reachedLevel.textContent = gameState.lastClearedLevel;
+        finalScore.textContent = gameState.lastClearedScore;
+        nameInputSection.classList.add('hidden');
         restartBtn.textContent = '次のレベル';
+        restartBtn.style.display = 'inline-block';
         gameOverModal.classList.remove('hidden');
     } else {
         // 全レベルクリア - 紙吹雪を表示
@@ -241,8 +263,10 @@ function levelComplete() {
         
         modalTitle.textContent = '🏆 全レベルクリア！ 🏆';
         modalMessage.textContent = 'おめでとうございます！すべてのレベルをクリアしました！';
+        reachedLevel.textContent = gameState.level;
         finalScore.textContent = gameState.score;
-        restartBtn.textContent = 'もう一度';
+        nameInputSection.classList.remove('hidden');
+        restartBtn.style.display = 'none';
         gameOverModal.classList.remove('hidden');
     }
 }
@@ -254,12 +278,29 @@ function gameOver(success, isTrap = false) {
     if (!success) {
         modalTitle.textContent = '😿 ゲームオーバー 😿';
         if (isTrap) {
-            modalMessage.textContent = '猫ちゃんが逃げてしまいました...';
+            modalMessage.textContent = '罠をクリックしてしまいました...';
         } else {
             modalMessage.textContent = '猫ちゃんが怒って逃げてしまいました...';
         }
-        finalScore.textContent = gameState.score;
-        restartBtn.textContent = 'もう一度';
+        
+        // 最後にクリアしたレベルとスコアを表示
+        // レベル1でゲームオーバーの場合は、クリアレベル0として扱う
+        const displayLevel = gameState.lastClearedLevel > 0 ? gameState.lastClearedLevel : 0;
+        const displayScore = gameState.lastClearedLevel > 0 ? gameState.lastClearedScore : gameState.score;
+        
+        reachedLevel.textContent = displayLevel;
+        finalScore.textContent = displayScore;
+        
+        // レベル1以降でゲームオーバーの場合のみ登録可能
+        if (displayLevel > 0) {
+            nameInputSection.classList.remove('hidden');
+            restartBtn.style.display = 'none';
+        } else {
+            nameInputSection.classList.add('hidden');
+            restartBtn.style.display = 'inline-block';
+            restartBtn.textContent = 'もう一度';
+        }
+        
         gameOverModal.classList.remove('hidden');
     }
 }
@@ -297,6 +338,8 @@ function cancelGame() {
     stopGame();
     gameState.level = 1;
     gameState.score = 0;
+    gameState.lastClearedLevel = 0;
+    gameState.lastClearedScore = 0;
     gameState.timeLeft = GAME_CONFIG.GAME_DURATION;
     updateDisplay();
     startBtn.disabled = false;
@@ -311,6 +354,8 @@ function restartGame() {
     if (gameState.level > GAME_CONFIG.MAX_LEVEL) {
         gameState.level = 1;
         gameState.score = 0;
+        gameState.lastClearedLevel = 0;
+        gameState.lastClearedScore = 0;
         levelDisplay.textContent = gameState.level;
         scoreDisplay.textContent = gameState.score;
     }
@@ -416,6 +461,128 @@ function stopConfetti() {
     }
     confettiParticles = [];
     confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+}
+
+// ランキング機能
+function getRankings() {
+    // Firebaseが利用可能な場合はFirebaseから取得（リアルタイム同期）
+    // この関数は直接呼ばれず、showRanking()で非同期に取得される
+    const rankings = localStorage.getItem('catGameRankings');
+    return rankings ? JSON.parse(rankings) : [];
+}
+
+function saveRankings(rankings) {
+    localStorage.setItem('catGameRankings', JSON.stringify(rankings));
+}
+
+async function saveScore() {
+    const playerName = playerNameInput.value.trim();
+    
+    if (!playerName) {
+        alert('名前を入力してください');
+        return;
+    }
+    
+    // 最後にクリアしたレベルとスコアを使用
+    const recordLevel = gameState.lastClearedLevel > 0 ? gameState.lastClearedLevel : gameState.level;
+    const recordScore = gameState.lastClearedLevel > 0 ? gameState.lastClearedScore : gameState.score;
+    
+    const newRecord = {
+        name: playerName,
+        level: recordLevel,
+        score: recordScore,
+        timestamp: Date.now(),
+        date: new Date().toISOString()
+    };
+    
+    try {
+        // Firebaseに保存
+        if (window.firebaseDB) {
+            const rankingsRef = window.firebaseRef(window.firebaseDB, 'rankings');
+            await window.firebasePush(rankingsRef, newRecord);
+            alert('ランキングに登録しました！（全デバイスで同期されます）');
+        } else {
+            // Firebaseが利用できない場合はLocalStorageに保存
+            let rankings = getRankings();
+            rankings.push(newRecord);
+            rankings.sort((a, b) => b.score - a.score);
+            rankings = rankings.slice(0, 10);
+            saveRankings(rankings);
+            alert('ランキングに登録しました！');
+        }
+    } catch (error) {
+        console.error('保存エラー:', error);
+        alert('保存に失敗しました。もう一度お試しください。');
+        return;
+    }
+    
+    // 入力欄をクリア
+    playerNameInput.value = '';
+    nameInputSection.classList.add('hidden');
+    restartBtn.style.display = 'inline-block';
+    restartBtn.textContent = 'ゲームに戻る';
+}
+
+function skipSave() {
+    nameInputSection.classList.add('hidden');
+    restartBtn.style.display = 'inline-block';
+    restartBtn.textContent = 'ゲームに戻る';
+}
+
+function showRanking() {
+    if (window.firebaseDB) {
+        // Firebaseからリアルタイムで取得
+        const rankingsRef = window.firebaseRef(window.firebaseDB, 'rankings');
+        
+        window.firebaseOnValue(rankingsRef, (snapshot) => {
+            const data = snapshot.val();
+            let rankings = [];
+            
+            if (data) {
+                // オブジェクトを配列に変換
+                rankings = Object.values(data);
+                // スコアでソート（降順）
+                rankings.sort((a, b) => b.score - a.score);
+                // 上位10件のみ
+                rankings = rankings.slice(0, 10);
+            }
+            
+            displayRankings(rankings);
+        }, { onlyOnce: true });
+    } else {
+        // Firebaseが利用できない場合はLocalStorageから取得
+        const rankings = getRankings();
+        displayRankings(rankings);
+    }
+    
+    rankingModal.classList.remove('hidden');
+}
+
+function displayRankings(rankings) {
+    if (rankings.length === 0) {
+        rankingList.innerHTML = '<p style="text-align: center; color: #999;">まだランキングがありません</p>';
+    } else {
+        let html = '';
+        rankings.forEach((record, index) => {
+            const rank = index + 1;
+            const isTop3 = rank <= 3;
+            html += `
+                <div class="ranking-item ${isTop3 ? 'top3' : ''}">
+                    <div class="ranking-rank">${rank}</div>
+                    <div class="ranking-name">${record.name}</div>
+                    <div class="ranking-info">
+                        <div class="ranking-level">レベル ${record.level}</div>
+                        <div class="ranking-score">${record.score}点</div>
+                    </div>
+                </div>
+            `;
+        });
+        rankingList.innerHTML = html;
+    }
+}
+
+function closeRanking() {
+    rankingModal.classList.add('hidden');
 }
 
 // 初期化実行

@@ -42,7 +42,14 @@ h1 {
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-.howto-link {
+.header-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.howto-link, .ranking-btn {
     display: inline-block;
     background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
     color: white;
@@ -52,10 +59,15 @@ h1 {
     font-size: 0.9em;
     font-weight: bold;
     transition: transform 0.2s, box-shadow 0.2s;
-    margin-bottom: 15px;
+    border: none;
+    cursor: pointer;
 }
 
-.howto-link:hover {
+.ranking-btn {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.howto-link:hover, .ranking-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
@@ -241,6 +253,119 @@ h1 {
     color: #667eea;
     font-weight: bold;
     font-size: 1.5em;
+}
+
+#reachedLevel {
+    color: #f5576c;
+    font-weight: bold;
+    font-size: 1.3em;
+}
+
+.name-input-section {
+    margin: 20px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.name-input-section p {
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #667eea;
+}
+
+#playerName {
+    width: 80%;
+    padding: 10px;
+    font-size: 1em;
+    border: 2px solid #667eea;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.btn-save, .btn-skip {
+    padding: 10px 20px;
+    margin: 5px;
+    border: none;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.btn-save {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-skip {
+    background: #e0e0e0;
+    color: #666;
+}
+
+.btn-save:hover, .btn-skip:hover {
+    transform: translateY(-2px);
+}
+
+.ranking-modal-content {
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.ranking-list {
+    margin: 20px 0;
+}
+
+.ranking-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    margin: 10px 0;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border-left: 5px solid #667eea;
+}
+
+.ranking-item.top3 {
+    background: linear-gradient(135deg, #fff9e6 0%, #ffe6cc 100%);
+    border-left: 5px solid #f9ca24;
+}
+
+.ranking-rank {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #667eea;
+    min-width: 50px;
+}
+
+.ranking-item.top3 .ranking-rank {
+    color: #f9ca24;
+}
+
+.ranking-name {
+    flex: 1;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #333;
+}
+
+.ranking-info {
+    text-align: right;
+}
+
+.ranking-level {
+    font-size: 0.9em;
+    color: #f5576c;
+    font-weight: bold;
+}
+
+.ranking-score {
+    font-size: 1.3em;
+    color: #667eea;
+    font-weight: bold;
 }
 
 #confettiCanvas {
