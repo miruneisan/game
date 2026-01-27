@@ -69,6 +69,16 @@ function init() {
     // キャンバスサイズを設定
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
+    
+    // ページ離脱時に状態を保存
+    window.addEventListener('beforeunload', () => {
+        if (gameState.level > 1 || gameState.score > 0) {
+            saveGameState();
+        }
+    });
+    
+    // ゲーム状態を復元
+    restoreGameState();
 }
 
 // キャンバスサイズ調整
@@ -105,6 +115,7 @@ function startGame() {
     cancelBtn.style.display = 'inline-block';
     
     updateDisplay();
+    saveGameState(); // ゲーム状態を保存
     startGameTimer();
     spawnCat();
 }
@@ -204,6 +215,7 @@ function petCat(index) {
             // 猫の場合：スコア加算
             gameState.score += 10 * gameState.level;
             scoreDisplay.textContent = gameState.score;
+            saveGameState(); // スコア更新時に保存
             
             // アニメーション
             catElement.classList.add('petted');
@@ -244,6 +256,7 @@ function levelComplete() {
     // クリア時のレベルとスコアを記録
     gameState.lastClearedLevel = gameState.level;
     gameState.lastClearedScore = gameState.score;
+    saveGameState(); // 状態を保存
     
     if (gameState.level < GAME_CONFIG.MAX_LEVEL) {
         gameState.level++;
@@ -343,6 +356,7 @@ function cancelGame() {
     gameState.timeLeft = GAME_CONFIG.GAME_DURATION;
     updateDisplay();
     startBtn.disabled = false;
+    clearGameState(); // 保存された状態をクリア
 }
 
 // ゲーム再開
@@ -358,6 +372,7 @@ function restartGame() {
         gameState.lastClearedScore = 0;
         levelDisplay.textContent = gameState.level;
         scoreDisplay.textContent = gameState.score;
+        clearGameState(); // 保存された状態をクリア
     }
     
     // ゲームオーバー後は開始ボタンを表示
@@ -583,6 +598,44 @@ function displayRankings(rankings) {
 
 function closeRanking() {
     rankingModal.classList.add('hidden');
+}
+
+// ゲーム状態の保存と復元
+function saveGameState() {
+    const state = {
+        level: gameState.level,
+        score: gameState.score,
+        lastClearedLevel: gameState.lastClearedLevel,
+        lastClearedScore: gameState.lastClearedScore,
+        timestamp: Date.now()
+    };
+    sessionStorage.setItem('catGameState', JSON.stringify(state));
+}
+
+function restoreGameState() {
+    const savedState = sessionStorage.getItem('catGameState');
+    if (savedState) {
+        try {
+            const state = JSON.parse(savedState);
+            // 5分以内の状態のみ復元
+            if (Date.now() - state.timestamp < 5 * 60 * 1000) {
+                gameState.level = state.level;
+                gameState.score = state.score;
+                gameState.lastClearedLevel = state.lastClearedLevel || 0;
+                gameState.lastClearedScore = state.lastClearedScore || 0;
+                updateDisplay();
+            } else {
+                // 古い状態は削除
+                sessionStorage.removeItem('catGameState');
+            }
+        } catch (error) {
+            console.error('状態の復元に失敗:', error);
+        }
+    }
+}
+
+function clearGameState() {
+    sessionStorage.removeItem('catGameState');
 }
 
 // 初期化実行
