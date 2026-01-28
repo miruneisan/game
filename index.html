@@ -40,6 +40,8 @@
             <button id="cancelBtn" class="btn-cancel" style="display: none;">キャンセル</button>
         </div>
 
+        <button id="resetBtn" class="reset-btn-bottom">🔄 最初から</button>
+
         <div id="gameOverModal" class="modal hidden">
             <div class="modal-content">
                 <h2 id="modalTitle">ゲームオーバー</h2>
@@ -54,7 +56,10 @@
                     <button id="skipSaveBtn" class="btn-skip">スキップ</button>
                 </div>
                 
-                <button id="restartBtn" class="btn-restart">もう一度</button>
+                <div class="button-group">
+                    <button id="restartBtn" class="btn-restart">もう一度</button>
+                    <button id="playAgainBtn" class="btn-play-again hidden">最初から遊ぶ</button>
+                </div>
             </div>
         </div>
 
@@ -102,6 +107,6 @@
         window.firebaseLimitToLast = limitToLast;
     </script>
 
-    <script src="script.js?v=4"></script>
+    <script src="script.js?v=8"></script>
 </body>
 </html>

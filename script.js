@@ -35,6 +35,7 @@ let gameState = {
 const gameBoard = document.getElementById('gameBoard');
 const startBtn = document.getElementById('startBtn');
 const cancelBtn = document.getElementById('cancelBtn');
+const resetBtn = document.getElementById('resetBtn');
 const levelDisplay = document.getElementById('level');
 const scoreDisplay = document.getElementById('score');
 const timerDisplay = document.getElementById('timer');
@@ -44,6 +45,7 @@ const modalMessage = document.getElementById('modalMessage');
 const finalScore = document.getElementById('finalScore');
 const reachedLevel = document.getElementById('reachedLevel');
 const restartBtn = document.getElementById('restartBtn');
+const playAgainBtn = document.getElementById('playAgainBtn');
 const confettiCanvas = document.getElementById('confettiCanvas');
 const confettiCtx = confettiCanvas.getContext('2d');
 const nameInputSection = document.getElementById('nameInputSection');
@@ -60,7 +62,9 @@ function init() {
     createHoles();
     startBtn.addEventListener('click', startGame);
     cancelBtn.addEventListener('click', cancelGame);
+    resetBtn.addEventListener('click', resetGame);
     restartBtn.addEventListener('click', restartGame);
+    playAgainBtn.addEventListener('click', playAgain);
     saveScoreBtn.addEventListener('click', saveScore);
     skipSaveBtn.addEventListener('click', skipSave);
     rankingBtn.addEventListener('click', showRanking);
@@ -111,6 +115,18 @@ function createHoles() {
 function startGame() {
     gameState.isPlaying = true;
     gameState.timeLeft = GAME_CONFIG.GAME_DURATION;
+    
+    // ゲームオーバー後の再プレイの場合、前回クリア時のスコアに戻す
+    if (gameState.lastClearedLevel > 0 && gameState.level === gameState.lastClearedLevel + 1) {
+        // 同じレベルを再プレイする場合
+        gameState.score = gameState.lastClearedScore;
+        scoreDisplay.textContent = gameState.score;
+    } else if (gameState.level === 1 && gameState.lastClearedLevel === 0) {
+        // レベル1の最初のプレイ
+        gameState.score = 0;
+        scoreDisplay.textContent = gameState.score;
+    }
+    
     startBtn.style.display = 'none';
     cancelBtn.style.display = 'inline-block';
     
@@ -269,6 +285,7 @@ function levelComplete() {
         nameInputSection.classList.add('hidden');
         restartBtn.textContent = '次のレベル';
         restartBtn.style.display = 'inline-block';
+        playAgainBtn.classList.add('hidden');
         gameOverModal.classList.remove('hidden');
     } else {
         // 全レベルクリア - 紙吹雪を表示
@@ -280,6 +297,7 @@ function levelComplete() {
         finalScore.textContent = gameState.score;
         nameInputSection.classList.remove('hidden');
         restartBtn.style.display = 'none';
+        playAgainBtn.classList.remove('hidden');
         gameOverModal.classList.remove('hidden');
     }
 }
@@ -299,10 +317,14 @@ function gameOver(success, isTrap = false) {
         // 最後にクリアしたレベルとスコアを表示
         // レベル1でゲームオーバーの場合は、クリアレベル0として扱う
         const displayLevel = gameState.lastClearedLevel > 0 ? gameState.lastClearedLevel : 0;
-        const displayScore = gameState.lastClearedLevel > 0 ? gameState.lastClearedScore : gameState.score;
+        const displayScore = gameState.lastClearedLevel > 0 ? gameState.lastClearedScore : 0;
         
         reachedLevel.textContent = displayLevel;
         finalScore.textContent = displayScore;
+        
+        // スコアを前回クリア時に戻す（再プレイ用）
+        gameState.score = gameState.lastClearedScore;
+        scoreDisplay.textContent = gameState.score;
         
         // レベル1以降でゲームオーバーの場合のみ登録可能
         if (displayLevel > 0) {
@@ -380,6 +402,63 @@ function restartGame() {
     updateDisplay();
     startBtn.style.display = 'inline-block';
     cancelBtn.style.display = 'none';
+}
+
+// 最初から遊ぶ（全レベルクリア後）
+function playAgain() {
+    gameOverModal.classList.add('hidden');
+    stopConfetti(); // 紙吹雪を停止
+    
+    // レベルとスコアをリセット
+    gameState.level = 1;
+    gameState.score = 0;
+    gameState.lastClearedLevel = 0;
+    gameState.lastClearedScore = 0;
+    gameState.timeLeft = GAME_CONFIG.GAME_DURATION;
+    
+    levelDisplay.textContent = gameState.level;
+    scoreDisplay.textContent = gameState.score;
+    updateDisplay();
+    clearGameState(); // 保存された状態をクリア
+    
+    // 開始ボタンを表示
+    startBtn.style.display = 'inline-block';
+    cancelBtn.style.display = 'none';
+}
+
+// リセット（ヘッダーのリセットボタン）
+function resetGame() {
+    // 確認ダイアログを表示
+    if (gameState.level > 1 || gameState.score > 0) {
+        if (!confirm('ゲームを最初からやり直しますか？\n現在の進行状況は失われます。')) {
+            return;
+        }
+    }
+    
+    // ゲームを停止
+    if (gameState.isPlaying) {
+        stopGame();
+    }
+    
+    // すべてをリセット
+    gameState.level = 1;
+    gameState.score = 0;
+    gameState.lastClearedLevel = 0;
+    gameState.lastClearedScore = 0;
+    gameState.timeLeft = GAME_CONFIG.GAME_DURATION;
+    
+    levelDisplay.textContent = gameState.level;
+    scoreDisplay.textContent = gameState.score;
+    updateDisplay();
+    clearGameState(); // 保存された状態をクリア
+    
+    // ボタンの状態をリセット
+    startBtn.style.display = 'inline-block';
+    cancelBtn.style.display = 'none';
+    
+    // モーダルを閉じる
+    gameOverModal.classList.add('hidden');
+    stopConfetti();
 }
 
 // 表示更新
