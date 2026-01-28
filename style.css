@@ -260,11 +260,12 @@ h1 {
 
 .modal-content {
     background: white;
-    padding: 40px;
+    padding: 40px 40px 80px 40px;
     border-radius: 20px;
     text-align: center;
     max-width: 400px;
     animation: modalSlideIn 0.3s ease-out;
+    position: relative;
 }
 
 @keyframes modalSlideIn {
@@ -347,6 +348,31 @@ h1 {
 
 .btn-save:hover, .btn-skip:hover {
     transform: translateY(-2px);
+}
+
+.btn-play-again-small {
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    font-size: 0.85em;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-play-again-small:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-play-again-small:active {
+    transform: translateY(0);
 }
 
 .button-group {

@@ -29,6 +29,7 @@ let gameState = {
     gameTimer: null,
     lastClearedLevel: 0, // 最後にクリアしたレベル
     lastClearedScore: 0, // 最後にクリアした時のスコア
+    allLevelsCleared: false, // 全レベルクリア済みフラグ
 };
 
 // DOM要素
@@ -228,10 +229,13 @@ function petCat(index) {
         const isCat = catElement.dataset.isCat === 'true';
         
         if (isCat) {
-            // 猫の場合：スコア加算
-            gameState.score += 10 * gameState.level;
-            scoreDisplay.textContent = gameState.score;
-            saveGameState(); // スコア更新時に保存
+            // 全レベルクリア後はスコアを加算しない
+            if (!gameState.allLevelsCleared) {
+                // 猫の場合：スコア加算
+                gameState.score += 10 * gameState.level;
+                scoreDisplay.textContent = gameState.score;
+                saveGameState(); // スコア更新時に保存
+            }
             
             // アニメーション
             catElement.classList.add('petted');
@@ -290,6 +294,9 @@ function levelComplete() {
     } else {
         // 全レベルクリア - 紙吹雪を表示
         startConfetti();
+        
+        // 全レベルクリア済みフラグを立てる
+        gameState.allLevelsCleared = true;
         
         modalTitle.textContent = '🏆 全レベルクリア！ 🏆';
         modalMessage.textContent = 'おめでとうございます！すべてのレベルをクリアしました！';
@@ -375,6 +382,7 @@ function cancelGame() {
     gameState.score = 0;
     gameState.lastClearedLevel = 0;
     gameState.lastClearedScore = 0;
+    gameState.allLevelsCleared = false;
     gameState.timeLeft = GAME_CONFIG.GAME_DURATION;
     updateDisplay();
     startBtn.disabled = false;
@@ -414,6 +422,7 @@ function playAgain() {
     gameState.score = 0;
     gameState.lastClearedLevel = 0;
     gameState.lastClearedScore = 0;
+    gameState.allLevelsCleared = false;
     gameState.timeLeft = GAME_CONFIG.GAME_DURATION;
     
     levelDisplay.textContent = gameState.level;
@@ -445,6 +454,7 @@ function resetGame() {
     gameState.score = 0;
     gameState.lastClearedLevel = 0;
     gameState.lastClearedScore = 0;
+    gameState.allLevelsCleared = false;
     gameState.timeLeft = GAME_CONFIG.GAME_DURATION;
     
     levelDisplay.textContent = gameState.level;
@@ -686,6 +696,7 @@ function saveGameState() {
         score: gameState.score,
         lastClearedLevel: gameState.lastClearedLevel,
         lastClearedScore: gameState.lastClearedScore,
+        allLevelsCleared: gameState.allLevelsCleared,
         timestamp: Date.now()
     };
     sessionStorage.setItem('catGameState', JSON.stringify(state));
@@ -702,6 +713,7 @@ function restoreGameState() {
                 gameState.score = state.score;
                 gameState.lastClearedLevel = state.lastClearedLevel || 0;
                 gameState.lastClearedScore = state.lastClearedScore || 0;
+                gameState.allLevelsCleared = state.allLevelsCleared || false;
                 updateDisplay();
             } else {
                 // 古い状態は削除
